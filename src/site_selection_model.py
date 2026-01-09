@@ -1,5 +1,7 @@
 from datetime import date
 from itertools import chain
+import io
+import zipfile
 import holidays
 import pandas as pd
 from pyspark.sql import SparkSession, functions as F, Column
@@ -84,8 +86,10 @@ def find_ao_day_num(date: date) -> int:
         return 0
 
 # ================================================================================================================================
-# Process overseas visitor data
+# Process other data tables
 # ================================================================================================================================
+
+# Overseas visitor data 
 
 overseas_visitors_df = pd.read_excel("data/raw/other/overseas_visitor_data.xlsx", sheet_name="Data1")
 
@@ -102,6 +106,34 @@ overseas_visitors_df["month"] = overseas_visitors_df["date"].dt.month
 
 # Filter counts after 2020
 overseas_visitors_df = overseas_visitors_df[overseas_visitors_df["year"] >= 2020]
+
+# =================================================================================================================
+
+# Site lane count data
+
+outer_zip_path = "data/raw/traffic_volume/traffic_signal_volume_data_2025.zip"
+
+with zipfile.ZipFile(outer_zip_path) as outer_zip:
+
+    first_inner_zip_name = sorted(outer_zip.namelist())[0]
+
+    with outer_zip.open(first_inner_zip_name) as inner_zip_bytes:
+        with zipfile.ZipFile(io.BytesIO(inner_zip_bytes.read())) as inner_zip:
+
+            first_csv_name = sorted(inner_zip.namelist())[0]
+            
+            with inner_zip.open(first_csv_name) as csv_file:
+
+                lane_count_df = pd.read_csv(csv_file)
+
+                # Remove rows with no positive volumes
+                volume_cols = [c for c in lane_count_df.columns if c.startswith("V")]
+                lane_count_df = lane_count_df[(lane_count_df[volume_cols] > 0).any(axis=1)]
+
+                lane_count_df.rename(columns={"NB_SCATS_SITE": "site_id", "NB_DETECTOR": "lane_count"}, inplace=True)
+
+                # Count lanes per traffic site
+                lane_count_df = lane_count_df.groupby(by="site_id", as_index=False).count()
 
 # ================================================================================================================================
 # Read processed files in Spark
@@ -157,10 +189,13 @@ df = df.withColumn("ao_day_num", ao_day_udf(F.col("datetime")))
 overseas_visitors_sdf = spark.createDataFrame(overseas_visitors_df[["year", "month", "overseas_visitor_count"]])
 df = df.join(overseas_visitors_sdf, on=["year", "month"], how="left")
 
+# Create lane count column
+lane_count_sdf = spark.createDataFrame(lane_count_df[["site_id", "lane_count"]])
+df = df.join(lane_count_sdf, on=["site_id"], how="left")
+
 df.show(10)
 df.printSchema()
 print(f"Length of table: {df.count()}")
 
-# site_lane_count
 # dist_to_ao
 # during_road_closure
