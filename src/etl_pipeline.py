@@ -18,10 +18,10 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------------------------------------------
 # PATHS
 # ---------------------------------------------------------------------------------------------------------------
-SITE_GDF_FILE_PATH = Path("data/raw/traffic_site/traffic_site_metadata.geojson")
-DATA_DIR = Path("data/raw/traffic_volume")
+SITE_DATA_DIR = Path("data/raw/traffic_site/traffic_site_metadata.geojson")
+VOLUME_DATA_DIR = Path("data/raw/traffic_volume")
 SITE_OUTPUT_DIR = Path("data/processed/traffic_site/top_100_sites.csv")
-VOLUME_OUTPUT_DIR = Path("data/processed/traffic_volume_v3")
+VOLUME_OUTPUT_DIR = Path("data/processed/traffic_volume")
 
 # ---------------------------------------------------------------------------------------------------------------
 # HELPER FUNCTIONS
@@ -98,8 +98,6 @@ def process_zip_file(zip_path: Path, selected_sites: pd.DataFrame) -> pd.DataFra
                                 df = process_csv_file(csv_file, selected_sites)
                                 dfs.append(df)
                                 logger.info("Processed %s", csv_name)
-                                break
-            break
 
     # Combine all CSVs
     return pd.concat(dfs, ignore_index=True)
@@ -107,7 +105,7 @@ def process_zip_file(zip_path: Path, selected_sites: pd.DataFrame) -> pd.DataFra
 # ---------------------------------------------------------------------------------------------------------------
 # SITE SELECTION
 # ---------------------------------------------------------------------------------------------------------------
-site_gdf = gdp.read_file(SITE_GDF_FILE_PATH)
+site_gdf = gdp.read_file(SITE_DATA_DIR)
 site_gdf.rename(columns={"SITE_NO": "site_id", "SITE_NAME": "site_name"}, inplace=True)
 site_gdf = site_gdf[["site_id", "site_name", "geometry"]]
 site_gdf = site_gdf.to_crs(epsg=4326)
@@ -127,7 +125,7 @@ top_100_sites.to_csv(SITE_OUTPUT_DIR)
 def main() -> None:
 
     # Read each ZIP file in directory
-    for zip_path in sorted(DATA_DIR.glob("*.zip")):
+    for zip_path in sorted(VOLUME_DATA_DIR.glob("*.zip")):
 
         df = process_zip_file(zip_path, top_100_sites)
         
