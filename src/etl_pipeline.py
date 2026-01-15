@@ -16,12 +16,14 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------------------------------------------
-# PATHS
+# PATHS / CONFIGURATIONS
 # ---------------------------------------------------------------------------------------------------------------
 SITE_DATA_DIR = Path("data/raw/traffic_site/traffic_site_metadata.geojson")
 VOLUME_DATA_DIR = Path("data/raw/traffic_volume")
 SITE_OUTPUT_DIR = Path("data/processed/traffic_site/top_100_sites.csv")
 VOLUME_OUTPUT_DIR = Path("data/processed/traffic_volume")
+
+SITE_NUM = 100
 
 # ---------------------------------------------------------------------------------------------------------------
 # HELPER FUNCTIONS
@@ -116,7 +118,7 @@ site_gdf["distance_to"] = site_gdf.geometry.apply(lambda geom: geodesic((geom.y,
 
 # Select top 100 closest traffic sites
 site_gdf.sort_values(by="distance_to", inplace=True)
-top_100_sites = site_gdf.iloc[:100, :3]
+top_100_sites = site_gdf.iloc[:SITE_NUM, :3]
 top_100_sites.to_csv(SITE_OUTPUT_DIR)
 
 # ---------------------------------------------------------------------------------------------------------------
