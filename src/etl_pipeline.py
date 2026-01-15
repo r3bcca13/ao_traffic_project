@@ -65,7 +65,7 @@ def process_csv_file(csv_file: pd.DataFrame, selected_sites: pd.DataFrame) -> pd
     df = df[["site_id", "date"] + volume_cols]
 
     # Sum 15-minute volumes by hour
-    volume_by_hour = {h+1: df[volume_cols[h*4 : (h+1)*4]].sum(axis=1) for h in range(24)}
+    volume_by_hour = {h: df[volume_cols[h*4 : (h+1)*4]].sum(axis=1) for h in range(24)}
     volume_df = pd.DataFrame(volume_by_hour, index=df.index)
     df = pd.concat([df.drop(columns=volume_cols), volume_df], axis=1)
     volume_cols = volume_df.columns
