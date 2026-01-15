@@ -74,10 +74,10 @@ def process_csv_file(csv_file: pd.DataFrame, selected_sites: pd.DataFrame) -> pd
                  var_name="hour",
                  value_name="volume")
     
-        # Change datatypes
+    # Change datatypes
     df["site_id"] = df["site_id"].astype("int16")
     df["hour"] = df["hour"].astype("int8")
-    df["volume"] = df["volume"].astype("int32")
+    df["volume"] = df["volume"].astype("int64")
     df["date"] = pd.to_datetime(df["date"]).dt.date
 
     return df[["date", "hour", "site_id", "volume"]]
@@ -127,10 +127,10 @@ def main() -> None:
     # Read each ZIP file in directory
     for zip_path in sorted(VOLUME_DATA_DIR.glob("*.zip")):
 
-        df = process_zip_file(zip_path, top_100_sites)
-        
         year = zip_path.stem[-4:]
         output_path = VOLUME_OUTPUT_DIR / f"traffic_volume_{year}.parquet"
+
+        df = process_zip_file(zip_path, top_100_sites)
 
         # Saved processed yearly file
         df.to_parquet(output_path,
