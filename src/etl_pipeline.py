@@ -77,7 +77,7 @@ def process_csv_file(csv_file: pd.DataFrame, selected_sites: pd.DataFrame) -> pd
         # Change datatypes
     df["site_id"] = df["site_id"].astype("int16")
     df["hour"] = df["hour"].astype("int8")
-    df["volume"] = df["volume"].astype("int16")
+    df["volume"] = df["volume"].astype("int32")
     df["date"] = pd.to_datetime(df["date"]).dt.date
 
     return df[["date", "hour", "site_id", "volume"]]
